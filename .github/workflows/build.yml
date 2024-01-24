@@ -1,5 +1,5 @@
 
-  name: Build and Security Scan
+name: Build and Security Scan
 
 on:
   push:
