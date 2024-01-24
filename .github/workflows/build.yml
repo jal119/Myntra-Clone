@@ -50,10 +50,10 @@ jobs:
           docker push jall1985/myntra:latest
         env:
           DOCKER_CLI_ACI: 1
-      - name: Docker Scout Scan
-        run: |
-          docker-scout quickview jall1985/myntra:latest
-          docker-scout cves jall1985/myntra:latest
+      # - name: Docker Scout Scan
+      #   run: |
+      #     docker-scout quickview jall1985/myntra:latest
+      #     docker-scout cves jall1985/myntra:latest
 
   prepare_report:
     name: Prepare Report
