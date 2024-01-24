@@ -21,7 +21,7 @@ jobs:
 
   security:
     name: Snyk Vulnerability Scan
-    runs-on: ubuntu-latest
+    runs-on: ibrahim
     needs: build
     steps:
       - uses: actions/checkout@v2
@@ -37,7 +37,7 @@ jobs:
 
   docker:
     name: Docker Operations
-    runs-on: ubuntu-latest
+    runs-on: ibrahim
     needs: security
     steps:
       - uses: actions/checkout@v2
@@ -57,7 +57,7 @@ jobs:
 
   prepare_report:
     name: Prepare Report
-    runs-on: ubuntu-latest
+    runs-on: ibrahim
     needs: docker
     steps:
       - uses: actions/checkout@v2
@@ -75,7 +75,7 @@ jobs:
 
   notify:
     name: Send Notifications
-    runs-on: ubuntu-latest
+    runs-on: ibrahim
     needs: prepare_report
     steps:
       - name: Download Report
