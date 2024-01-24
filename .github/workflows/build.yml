@@ -6,83 +6,91 @@ on:
       - main
 
 jobs:
-  build:
-    name: Build and SonarQube Scan
+  build_and_scan:
+    name: Build and SonarQube Analysis
     runs-on: ibrahim
     steps:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      - name: SonarQube Scan
+      - name: Execute SonarQube Analysis
         uses: sonarsource/sonarqube-scan-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
-  security:
-    name: Snyk Vulnerability Scan
+  vulnerability_scan:
+    name: Snyk Security Scan
     runs-on: ibrahim
-    needs: build
+    needs: build_and_scan
     steps:
       - uses: actions/checkout@v2
-      - name: Run Snyk to check for vulnerabilities
+      - name: Snyk Vulnerability Check
         uses: snyk/actions/node@master
         continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           args: --severity-threshold=high
-      - name: npm install dependency
+      - name: Install Dependencies
         run: npm install
 
-  docker:
-    name: Docker Operations
+  docker_operations:
+    name: Docker Build and Push
     runs-on: ibrahim
-    needs: security
+    needs: vulnerability_scan
     steps:
       - uses: actions/checkout@v2
-      - name: Docker Login
+      - name: Docker Authentication
         run: docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Docker build and push
+      - name: Build and Push Docker Image
         run: |
           docker build -t myntra .
           docker tag myntra jall1985/myntra:latest
           docker push jall1985/myntra:latest
-        env:
-          DOCKER_CLI_ACI: 1
-      # - name: Docker Scout Scan
-      #   run: |
-      #     docker-scout quickview jall1985/myntra:latest
-      #     docker-scout cves jall1985/myntra:latest
 
-  prepare_report:
-    name: Prepare Report
+  deployment:
+    name: Deploy Application
+    needs: docker_operations
     runs-on: ibrahim
-    needs: docker
+    steps:
+      - name: Retrieve Docker Image
+        run: docker pull jall1985/myntra:latest
+      - name: Start Docker Container
+        run: docker run -d --name app -p 3000:3000 jall1985/myntra:latest
+      - name: Configure Kubernetes
+        run: aws eks --region us-east-1 update-kubeconfig --name EKS_CLOUD
+      - name: Kubernetes Deployment
+        run: kubectl apply -f deployment-service.yml
+
+  report_generation:
+    name: Generate Report
+    runs-on: ibrahim
+    needs: deployment
     steps:
       - uses: actions/checkout@v2
-      - name: Generate report
+      - name: Create Report File
         run: |
           echo "Build and Security Scan Report" > report.txt
           echo "==============================" >> report.txt
           echo "Date: $(date)" >> report.txt
-          # Add detailed report contents here
-      - name: Upload report as artifact
+
+      - name: Store Report as Artifact
         uses: actions/upload-artifact@v2
         with:
           name: security-report
           path: report.txt
 
-  notify:
-    name: Send Notifications
+  notification:
+    name: Notification Service
     runs-on: ibrahim
-    needs: prepare_report
+    needs: report_generation
     steps:
-      - name: Download Report
+      - name: Retrieve Report
         uses: actions/download-artifact@v2
         with:
           name: security-report
-      - name: Send Email Notification
+      - name: Email Notification
         uses: dawidd6/action-send-mail@v2
         with:
           server_address: smtp.gmail.com
@@ -90,12 +98,12 @@ jobs:
           username: ${{ secrets.GMAIL_USER }}
           password: ${{ secrets.GMAIL_APP_PASSWORD }}
           subject: CI Build and Security Scan Report
-          body: Build and security scan completed. Report is attached.
+          body: The build and security scan is complete. Report is attached.
           to: devops4577@gmail.com
           from: GitHub Actions <devops4577@gmail.com>
           secure: true
           attachment: report.txt
-      - name: Send Slack Notification
+      - name: Slack Notification
         uses: act10ns/slack@v1
         with:
           status: ${{ job.status }}
