@@ -74,7 +74,6 @@ jobs:
           echo "Build and Security Scan Report" > report.txt
           echo "==============================" >> report.txt
           echo "Date: $(date)" >> report.txt
-
       - name: Store Report as Artifact
         uses: actions/upload-artifact@v2
         with:
@@ -90,6 +89,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: security-report
+
       - name: Email Notification
         uses: dawidd6/action-send-mail@v2
         with:
@@ -101,14 +101,12 @@ jobs:
           body: The build and security scan is complete. Report is attached.
           to: devops4577@gmail.com
           from: GitHub Actions <devops4577@gmail.com>
-          secure: true
-          attachment: report.txt
+          attachments: '/home/ubuntu/actions-runner/_work/Myntra-Clone/Myntra-Clone/report.txt'
+
       - name: Slack Notification
         uses: act10ns/slack@v1
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
-          channel-id: '#new-github-action'
-          slack-message: "Build and security scan completed. Report is attached."
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          channel: '#new-github-action'
+          message: 'Build and security scan completed. Report is attached.'
