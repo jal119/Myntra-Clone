@@ -79,7 +79,7 @@ jobs:
       - name: Send Slack Notification
         uses: slackapi/slack-github-action@v1.15.0
         with:
-          channel-id: 'C063FAZUMM0'
+          channel-id: 'C06FH4P7Z1A'
           slack-message: "Build and security scan completed. Report is attached."
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
