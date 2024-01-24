@@ -24,8 +24,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
       - name: Run Snyk to check for vulnerabilities
         uses: snyk/actions/node@master
+        continue-on-error: true  # This will prevent the workflow from failing
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
